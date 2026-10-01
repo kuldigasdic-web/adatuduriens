@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="lv">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>Adatu Fabrikas Koprades Siena</title>
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      }
+
+      /* Sākuma poga kameras aktivizēšanai */
+      #startOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(15, 23, 42, 0.85);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 999999;
+      }
+      #startBtn {
+        padding: 16px 36px;
+        background: linear-gradient(135deg, #0ea5e9, #0284c7);
+        color: white;
+        border: none;
+        border-radius: 30px;
+        font-size: 17px;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 8px 25px rgba(2, 132, 199, 0.5);
+      }
+
+      /* Augšējais statusa panelis */
+      #statusBox {
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 85%;
+        max-width: 360px;
+        background: rgba(15, 23, 42, 0.85);
+        backdrop-filter: blur(10px);
+        color: #fff;
+        padding: 10px 16px;
+        border-radius: 20px;
+        text-align: center;
+        font-size: 13px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        z-index: 10000;
+      }
+
+      /* Apakšējā ievades josla adīšanai */
+      #craftPanel {
+        position: absolute;
+        bottom: 25px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90%;
+        max-width: 380px;
+        background: rgba(15, 23, 42, 0.9);
+        backdrop-filter: blur(12px);
+        color: white;
+        padding: 16px 20px;
+        border-radius: 24px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        border: 1px solid rgba(14, 165, 233, 0.4);
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .color-picker {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .color-dot {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 2px solid transparent;
+        cursor: pointer;
+        transition: transform 0.2s;
+      }
+      .color-dot.active {
+        border-color: #fff;
+        transform: scale(1.15);
+      }
+
+      .input-row {
+        display: flex;
+        gap: 8px;
+      }
+      #stitchInput {
+        flex: 1;
+        padding: 10px 14px;
+        border-radius: 12px;
+        border: 1px solid #334155;
+        background: #1e293b;
+        color: #fff;
+        font-size: 14px;
+        outline: none;
+      }
+      #knitBtn {
+        padding: 10px 18px;
+        border-radius: 12px;
+        border: none;
+        background: #0ea5e9;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+      }
+      #knitBtn:disabled {
+        background: #475569;
+        cursor: not-allowed;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="startOverlay">
+      <button id="startBtn">Pievienoties Koprades Sienai</button>
+    </div>
+
+    <div id="statusBox">Pavērsiet kameru pret Koprades sienas zīmi</div>
+
+    <div id="craftPanel">
+      <div class="color-picker">
+        <span style="font-size: 13px; color: #94a3b8;">Diega krāsa:</span>
+        <div class="color-dot active" style="background: #f59e0b;" data-color="#f59e0b"></div>
+        <div class="color-dot" style="background: #ef4444;" data-color="#ef4444"></div>
+        <div class="color-dot" style="background: #10b981;" data-color="#10b981"></div>
+        <div class="color-dot" style="background: #0ea5e9;" data-color="#0ea5e9"></div>
+        <div class="color-dot" style="background: #a855f7;" data-color="#a855f7"></div>
+      </div>
+      <div class="input-row">
+        <input type="text" id="stitchInput" placeholder="Tavs vārds vai vēlējums..." maxlength="18" />
+        <button id="knitBtn">Ieadīt</button>
+      </div>
+    </div>
+
+    <a-scene 
+      mindar-image="imageTargetSrc: ./targets.mind; filterMinCF: 0.0001; filterBeta: 0.01; missTolerance: 6;" 
+      color-space="sRGB" 
+      renderer="colorManagement: true, physicallyCorrectLights" 
+      vr-mode-ui="enabled: false" 
+      device-orientation-permission-ui="enabled: false">
+
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+      <a-entity id="wallTarget" mindar-image-target="targetIndex: 0">
+        
+        <!-- Gobelēna fona rāmis uz sienas -->
+        <a-plane position="0 0 0" width="2.4" height="1.6" material="color: #0f172a; opacity: 0.75; transparent: true;"></a-plane>
+
+        <a-text value="ADATU FABRIKAS KOPRADES GOBELĒNS" position="0 0.7 0.02" align="center" scale="0.45 0.45 0.45" color="#94a3b8"></a-text>
+
+        <!-- Mezgla un pavedienu konteiners -->
+        <a-entity id="stitchesContainer" position="0 0 0.03"></a-entity>
+
+        <!-- VIRTUĀLĀ ADATA (dūriena animācijai) -->
+        <a-entity id="needle" position="0 1.5 0.8" rotation="45 0 0" visible="false">
+          <!-- Smaile -->
+          <a-cone position="0 -0.5 0" rotation="180 0 0" radius-bottom="0.02" radius-top="0.001" height="0.8" material="color: #e2e8f0; metalness: 0.95; roughness: 0.15;"></a-cone>
+          <!-- Korpuss -->
+          <a-cylinder position="0 0.2 0" radius="0.02" height="0.6" material="color: #e2e8f0; metalness: 0.95; roughness: 0.15;"></a-cylinder>
+          <!-- Acs -->
+          <a-torus position="0 0.6 0" radius="0.025" radius-tubular="0.008" material="color: #e2e8f0; metalness: 0.95; roughness: 0.15;"></a-torus>
+        </a-entity>
+
+      </a-entity>
+    </a-scene>
+
+    <script>
+      const startOverlay = document.querySelector('#startOverlay');
+      const startBtn = document.querySelector('#startBtn');
+      const statusBox = document.querySelector('#statusBox');
+      const target = document.querySelector('#wallTarget');
+      const container = document.querySelector('#stitchesContainer');
+      const needle = document.querySelector('#needle');
+      const knitBtn = document.querySelector('#knitBtn');
+      const stitchInput = document.querySelector('#stitchInput');
+      const colorDots = document.querySelectorAll('.color-dot');
+
+      let selectedColor = '#f59e0b';
+      let stitchCount = 0;
+
+      // Krāsu izvēle
+      colorDots.forEach(dot => {
+        dot.addEventListener('click', () => {
+          colorDots.forEach(d => d.classList.remove('active'));
+          dot.classList.add('active');
+          selectedColor = dot.getAttribute('data-color');
+        });
+      });
+
+      startBtn.addEventListener('click', () => {
+        startOverlay.style.display = 'none';
+      });
+
+      target.addEventListener('targetFound', () => {
+        statusBox.innerHTML = "Siena atpazīta! <b>Izvēlies krāsu un ieadi savu ziņu</b>";
+      });
+      target.addEventListener('targetLost', () => {
+        statusBox.innerText = "Pavērsiet kameru pret Koprades sienas zīmi";
+      });
+
+      // Adīšanas darbība
+      knitBtn.addEventListener('click', () => {
+        const text = stitchInput.value.trim();
+        if (!text) return;
+
+        knitBtn.disabled = true;
+        stitchInput.disabled = true;
+        statusBox.innerText = "Adata ieada tavu pavedienu sienā...";
+
+        // 1. Aprēķinām jauna dūriena koordinātas uz sienas
+        const col = stitchCount % 4;
+        const row = Math.floor(stitchCount / 4) % 4;
+        const targetX = -0.75 + (col * 0.5);
+        const targetY = 0.35 - (row * 0.28);
+        stitchCount++;
+
+        // 2. Parādām adatu virs izvēlētās vietas
+        needle.setAttribute('visible', 'true');
+        needle.setAttribute('position', `${targetX} ${targetY + 0.6} 0.5`);
+        needle.setAttribute('rotation', '30 0 0');
+
+        // 3. Adatas dūriena animācija (uz leju un sienā iekšā)
+        needle.setAttribute('animation', {
+          property: 'position',
+          to: `${targetX} ${targetY} 0.05`,
+          dur: 600,
+          easing: 'easeInQuad'
+        });
+
+        // 4. Kad adata ieduras sienā — izveidojam jaunu adījuma mezglu
+        setTimeout(() => {
+          // Izveidojam mezgla grupu
+          const stitchGroup = document.createElement('a-entity');
+          stitchGroup.setAttribute('position', `${targetX} ${targetY} 0`);
+
+          // Krāsainā diega cilpa / lode
+          const knot = document.createElement('a-torus');
+          knot.setAttribute('radius', '0.08');
+          knot.setAttribute('radius-tubular', '0.02');
+          knot.setAttribute('material', `color: ${selectedColor}; roughness: 0.4; metalness: 0.2;`);
+          knot.setAttribute('animation', 'property: scale; from: 0 0 0; to: 1 1 1; dur: 400; easing: easeOutBack;');
+          stitchGroup.appendChild(knot);
+
+          // Apmeklētāja teksts zem diega
+          const label = document.createElement('a-text');
+          label.setAttribute('value', text);
+          label.setAttribute('align', 'center');
+          label.setAttribute('position', '0 -0.14 0');
+          label.setAttribute('scale', '0.3 0.3 0.3');
+          label.setAttribute('color', '#ffffff');
+          stitchGroup.appendChild(label);
+
+          container.appendChild(stitchGroup);
+
+          // Adatas atvilkšana atpakaļ
+          needle.setAttribute('animation', {
+            property: 'position',
+            to: `${targetX} ${targetY + 0.8} 0.7`,
+            dur: 500,
+            easing: 'easeOutQuad'
+          });
+
+          setTimeout(() => {
+            needle.setAttribute('visible', 'false');
+            knitBtn.disabled = false;
+            stitchInput.disabled = false;
+            stitchInput.value = '';
+            statusBox.innerHTML = "Pavediens ieadīts! <b>Gobelēns ir papildināts</b>";
+          }, 500);
+
+        }, 600);
+      });
+    </script>
+  </body>
+</html>
